@@ -1,0 +1,11 @@
+torch
+torchaudiotorchdata==0.7.1
+torchsummary==1.5.1
+torchtext==0.17.1
+torchvision
+pandas==1.5.3
+scikit-learn==1.2.2
+Pillow==9.4.0
+numpy==1.25.2
+matplotlib==3.7.1
+tqdm==4.66.2
