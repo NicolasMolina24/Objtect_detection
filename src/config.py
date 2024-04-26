@@ -1,14 +1,18 @@
 import os
 import torch
+from pathlib import Path
 
-# Paths to the data, model, images, and output directories
-DATASET_PATH = os.path.join(os.path.dirname(__file__), 'data')
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'model')
-IMAGES_PATH = os.path.join(os.path.dirname(__file__), 'images')
+# Paths to the data, model directories
+DATASET_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\data')
+MODEL_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\models')
 
 # Output path
-OUTPUT_PATH = os.path.join(os.path.dirname(__file__), 'output')
-
+OUTPUT_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\output')
+# Create the output directory
+OUTPUT_PATH.mkdir(exist_ok=True)
+# Accuracy and loss plot name
+PLOT_NAME = 'loss_accuracy.png'
+MODEL_NAME = 'best_model_{epoch}.pth'
 # Model parameters
 SEED = 24
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -23,13 +27,10 @@ LR = 1e-4
 N_EPOCHS = 10
 BATCH_SIZE = 32
 
-## Loss for the model
-L_CLASS = 1.
-L_BBOX = 1.
-
 def seed_everything(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 TORCH_SEED = seed_everything(SEED)
+SET_SEED = False
