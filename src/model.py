@@ -1,6 +1,4 @@
 from torch import nn
-import torch
-from pathlib import Path
 
 class FewShotModel(nn.Module):
     """
@@ -35,33 +33,10 @@ class FewShotModel(nn.Module):
         # set the classifier of our base model to produce outputs features
         # from the last convolution block
         self.model.fc.in_features = nn.Identity()
-
-
     
     def forward(self, x):
 
         features = self.model(x)
         bboxes = self.regressor(features)
         classes = self.classifier(features)
-
         return (bboxes, classes)
-    
-
-class SaveBestModel():
-    """
-    Save the best model
-    """
-    def __init__(self, save_path, best_loss=float('inf')):
-        self.best_loss = best_loss
-        self.save_path = Path(save_path)
-
-    def __call__(self, valid_loss, epoch, model, optimizer):
-        if valid_loss > self.best_loss:
-            self.best_loss = valid_loss
-            data = {
-                'epoch': epoch,
-                'model': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'loss': valid_loss
-            }
-            torch.save(data, self.save_path.joinpaht('best_model_{epoch}.pth'))
