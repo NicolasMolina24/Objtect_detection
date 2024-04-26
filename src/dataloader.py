@@ -94,3 +94,6 @@ class FewShotDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         return image, label, bbox
+
+    def get_classes(self):
+        return self.data['label'].nunique()
