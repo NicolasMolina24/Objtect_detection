@@ -4,7 +4,9 @@ from pathlib import Path
 
 # Paths to the data, model directories
 DATASET_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\data')
+DATASET_PATH.mkdir(exist_ok=True)
 MODEL_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\models')
+MODEL_PATH.mkdir(exist_ok=True)
 
 # Output path
 OUTPUT_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\output')
