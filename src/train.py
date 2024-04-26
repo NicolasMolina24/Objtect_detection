@@ -1,35 +1,18 @@
 # USAGE
 # python train.py
 # import the necessary packages
-from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader
-from torchvision import transforms
-from torch.nn import CrossEntropyLoss
-from torch.nn import MSELoss
+from torch.nn import CrossEntropyLoss, MSELoss, lr_scheduler
 from torch.optim import Adam
 from torchvision.models import resnet50
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import numpy as np
-import pickle
 import torch
-import time
-import cv2
 import os
 import model
 import config
 import dataloader
-import ultils
-
-# initialize the list of data (images), class labels, target bounding
-# box coordinates, and image paths
-print("[INFO] loading dataset...")
-data = []
-labels = []
-bboxes = []
-imagePaths = []
+import utils
 
 
 def train_step(model:torch.nn.Model, data_loader, loss_fn, optimizer, accuracy_fc, device):
@@ -40,9 +23,10 @@ def train_step(model:torch.nn.Model, data_loader, loss_fn, optimizer, accuracy_f
         # 0. data to device
         image, label, bbox = image.to(device), label.to(device), bbox.to(device)
         # 1. Forward pass
-        prediction = model(data)
+        prediction = model(image)
         # 2. Compute loss and accuracy
-        total_loss = loss_fn['bbox_loss'](prediction[0], bbox) + loss_fn['class_loss'](prediction[1], label)
+        total_loss = (loss_fn['bbox_loss'](prediction[0], bbox) + 
+                      loss_fn['class_loss'](prediction[1], label))
         train_loss += total_loss.item()
 
         train_accuracy += accuracy_fc(prediction[1].argmax(1), label)
@@ -72,7 +56,8 @@ def test_step(model, data_loader, loss_fn, accuracy_fn, device):
             # from logits to class
             class_prediction = prediction.argmax(dim=1)
             # 2. Compute loss and accuracy
-            test_loss += loss_fn['bbox_loss'](prediction[0], bbox) + loss_fn['class_loss'](prediction[1], label)
+            test_loss += (loss_fn['bbox_loss'](prediction[0], bbox) +
+                          loss_fn['class_loss'](prediction[1], label))
             test_acc += accuracy_fn(y_true=target, y_pred=class_prediction)
 
         test_loss /= len(data_loader)
@@ -80,28 +65,36 @@ def test_step(model, data_loader, loss_fn, accuracy_fn, device):
             
     return test_loss, test_acc
 
-def train_model():
+def train_model(seed=config.SET_SEED, scheduler=False) -> None:
 
-    # set the manual seed for reproducibility
-    config.TORCH_SEED
+    if seed:
+        # set the manual seed for reproducibility
+        config.TORCH_SEED
+
+    # create csv file with the data
+    csv_data = dataloader.create_data_csv(config.DATASET_PATH)
 
     # load the dataLOader
-    trainDataset = dataloader.FewShotDataset('test.csv', dataloader.transforms()['train'])
+    trainDataset = dataloader.FewShotDataset(csv_data, dataloader.transforms()['train'])
+    testDataset = dataloader.FewShotDataset(csv_data, dataloader.transforms()['test'])
+    # get the number of classes in the train dataset
+    num_classes = trainDataset.get_classes()
 
     # create data loaders
     trainLoader = DataLoader(trainDataset, batch_size=config.BATCH_SIZE,
         shuffle=True, num_workers=os.cpu_count(), pin_memory=config.PIN_MEMORY)
+    testLoader = DataLoader(testDataset, batch_size=config.BATCH_SIZE,
+        shuffle=False, num_workers=os.cpu_count(), pin_memory=config.PIN_MEMORY)
         
-
     # load the pretrain model 
     baseModel = resnet50(pretrained=True)
     # freeze the model
     for param in baseModel.parameters():
         param.requires_grad = False
-    
-    save_best_model = model.SaveBestModel('D:/best_model')
-
-    objectDetector = model.FewShotModel(baseModel, num_classes=4) # fix this
+    # create the object save_best_model
+    save_best_model = utils.SaveBestModel(config.MODEL_PATH)
+    # create the model
+    objectDetector = model.FewShotModel(baseModel, num_classes=num_classes)
     # send the model to the device
     objectDetector.to(config.DEVICE)
 
@@ -113,6 +106,8 @@ def train_model():
 
     # define the optimizer
     optimizer = Adam(objectDetector.parameters(), lr=config.LR)
+    if scheduler:
+        lr_sr = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
     history = {
         'train_loss': [],
@@ -123,9 +118,9 @@ def train_model():
 
     for epoch in tqdm(range(config.EPOCHS)):
         # train step
-        train_loss = train_step(model, trainLoader, loss_fn, optimizer, f1_score, config.DEVICE)
+        train_loss = train_step(objectDetector, trainLoader, loss_fn, optimizer, f1_score, config.DEVICE)
         # test step
-        val_loss, accuracy = test_step(model, trainLoader, loss_fn, f1_score, config.DEVICE)
+        val_loss, accuracy = test_step(objectDetector, trainLoader, loss_fn, f1_score, config.DEVICE)
 
         history['train_loss'].append(train_loss[0])
         history['train_accuracy'].append(train_loss[1])
@@ -134,9 +129,13 @@ def train_model():
 
         print(f'Epoch: {epoch}, Train Loss: {train_loss}, Val Loss: {val_loss}, Accuracy: {accuracy}')
 
+        # adjust the learning rate
+        if scheduler:
+            lr_sr.step()
+            print(f'Current learning rate: {lr_sr.get_last_lr()}')
+
         # save the best model on validation loss
-        save_best_model(val_loss, epoch, model, optimizer)
+        save_best_model(val_loss, epoch, objectDetector, optimizer)
 
         # save the plots for loss and accuracy
-        ultils.save_plot(history, 'loss')
-    return model
+        utils.save_plot(history, config.PLOT_NAME)
