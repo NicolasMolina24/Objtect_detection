@@ -2,8 +2,8 @@
 # python train.py
 # import the necessary packages
 from torch.utils.data import DataLoader
-from torch.nn import CrossEntropyLoss, MSELoss, lr_scheduler
-from torch.optim import Adam
+from torch.nn import CrossEntropyLoss, MSELoss
+from torch.optim import Adam, lr_scheduler
 from torchvision.models import resnet50
 from sklearn.metrics import f1_score
 from tqdm import tqdm
@@ -15,7 +15,7 @@ import dataloader
 import utils
 
 
-def train_step(model:torch.nn.Model, data_loader, loss_fn, optimizer, accuracy_fc, device):
+def train_step(model, data_loader, loss_fn, optimizer, accuracy_fc, device):
     # loop through the training set
     model.train()
     train_loss, train_accuracy = 0.0, 0.0
@@ -72,11 +72,11 @@ def train_model(seed=config.SET_SEED, scheduler=False) -> None:
         config.TORCH_SEED
 
     # create csv file with the data
-    csv_data = dataloader.create_data_csv(config.DATASET_PATH)
+    csv_data = dataloader.create_csv_data(config.DATASET_PATH)
 
     # load the dataLOader
-    trainDataset = dataloader.FewShotDataset(csv_data, dataloader.transforms()['train'])
-    testDataset = dataloader.FewShotDataset(csv_data, dataloader.transforms()['test'])
+    trainDataset = dataloader.FewShotDataset(csv_data, dataloader.transformations()['train'])
+    testDataset = dataloader.FewShotDataset(csv_data, dataloader.transformations()['test'])
     # get the number of classes in the train dataset
     num_classes = trainDataset.get_classes()
 
