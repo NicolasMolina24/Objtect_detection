@@ -5,41 +5,38 @@ import pandas as pd
 import config
 
 
-def create_csv_data(images_path, labels_path, exts=['jpg', 'jpeg', 'png']) -> str:
+def create_csv_data(path_data: str) -> str:
     """
-    Create a CSV file with the image paths and labels
-
+    Create a CSV file with columns image, label, bbox and use
+    image is path to the image, label is the class of the image,
+    bbox are the coordinates of the bounding box of the image and 
+    use is the type of data (train, test, val)
+    
     Args:
-    images_path (str): path to the images directory
-    labels_path (str): path to the labels directory
-    exts (list): list of image file extensions
+    path_data (Path): path to the data directory
 
     Returns:
-    str: path to the CSV file    
+    str: path to the CSV file
     """
-    # get labels names files from path
-    labels = {label.name:label  for label in list(labels_path.glob('*'))}
-
-    # get list of images in formats jpg, jpeg, png
-    images = []
-    for ext in exts:
-        images.extend(list(images_path.glob(f'*.{ext}')))
-
-    # create a list of dictionaries with the image path and label
     data = []
-    for image in images:
-        label = image.parent.name
-        # read the label file and get the class and bbox
-        with open(labels[label], 'r') as f:
-            Label_bbox = f.read()
-            Label_bbox = Label_bbox.split(' ')
-            label, bbox = Label_bbox[0], Label_bbox[1:]
-            
-        data.append({'image': str(image), 'label': label, 'bbox': bbox})
-    # return df with columns image, label, bbox
+    uses = ['test', 'train', 'val']
+    for use in uses:
+        path_data_use = path_data.joinpath(use)
+        for image_file in path_data_use.joinpath('images').glob('*'):
+            file_name = image_file.stem
+            up_folder = path_data_use.joinpath('labels')
+            label_file = up_folder.joinpath(file_name + '.txt')
+            if label_file.exists():
+                with open(label_file, 'r') as f:
+                    label = f.read()
+                    label = label.split(' ')
+                    label, bbox = label[0], label[1:]
+                data.append({'image': image_file, 'label': label, 'bbox': bbox, 'use': use})
+            else:
+                continue
     data = pd.DataFrame(data)
-    data.to_csv(images_path / 'data.csv', index=False)
-    return images_path / 'data.csv'
+    data.to_csv(config.CSV_PATH, index=False)
+    return config.CSV_PATH
 
 
 def transforms() -> dict:
