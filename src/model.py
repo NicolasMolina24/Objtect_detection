@@ -27,7 +27,7 @@ class FewShotModel(nn.Module):
         	nn.Linear(512, 512),
         	nn.ReLU(),
         	nn.Dropout(),
-        	nn.Linear(512, self.numClasses)
+        	nn.Linear(512, self.num_classes)
         )       
 
         # set the classifier of our base model to produce outputs features
