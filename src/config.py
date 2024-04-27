@@ -3,13 +3,15 @@ import torch
 from pathlib import Path
 
 # Paths to the data, model directories
-DATASET_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\data')
+DATASET_PATH = Path('..\data')
 DATASET_PATH.mkdir(exist_ok=True)
-MODEL_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\models')
+MODEL_PATH = Path('..\models')
 MODEL_PATH.mkdir(exist_ok=True)
+# Path to the data
+CSV_PATH = DATASET_PATH.joinpath('data.csv')
 
 # Output path
-OUTPUT_PATH = Path('D:\AIO\projects\lasdiv\Objtect_detection\output')
+OUTPUT_PATH = Path('..\output')
 # Create the output directory
 OUTPUT_PATH.mkdir(exist_ok=True)
 # Accuracy and loss plot name
