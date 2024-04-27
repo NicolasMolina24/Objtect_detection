@@ -28,7 +28,7 @@ STD = [0.229, 0.224, 0.225]
 
 ## Model parameters
 LR = 1e-4
-N_EPOCHS = 10
+EPOCHS = 10
 BATCH_SIZE = 32
 
 def seed_everything(seed):
