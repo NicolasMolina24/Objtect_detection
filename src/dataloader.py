@@ -2,6 +2,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from pathlib import Path
 import pandas as pd
+from torchvision import transforms
 import config
 
 
@@ -39,14 +40,14 @@ def create_csv_data(path_data: str) -> str:
     return config.CSV_PATH
 
 
-def transforms() -> dict:
+def transformations() -> dict:
     """
     Create a dictionary with the transformations to apply to the images
 
     Returns:
     dict: dictionary with the transformations    
     """
-    transformations = {
+    set_transformations = {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.RandomHorizontalFlip(),
@@ -59,7 +60,7 @@ def transforms() -> dict:
             transforms.Normalize(mean=config.MEAN, std=config.STD)
         ])
     }
-    return transformations
+    return set_transformations
 
 class FewShotDataset(Dataset):
     """
